@@ -1,16 +1,16 @@
 ![build](https://github.com/compas-dev/compas/workflows/build/badge.svg)
 
 # compas_pr2d
-<<<<<<< HEAD
+=======
 A 2D Piecewise rigid displacement solver
 =======
 
 A 2D piecewise rigid displacement - optimization based solver for simple 2D geometries.
 
-```markdown
+
 > [!WARNING]
 > This package is still underdevelopment, and may contain bugs for some specific typologies.
-```
+
 ## Installation
 
 Stable releases can be installed from PyPI.
@@ -33,10 +33,9 @@ pip install -e ".[dev]"
 For further "getting started" instructions, a tutorial, examples, and an API reference,
 please check out the online documentation here: [compas_pr2d docs](https://BRG-research.github.io/compas_pr2d)
 
-```markdown
+
 > [!TIP]
 > Go through the documentation for an explanation of the examples.
-```
 
 ## Issue Tracker
 
