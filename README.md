@@ -1,7 +1,7 @@
 ![build](https://github.com/compas-dev/compas/workflows/build/badge.svg)
 
 # compas_pr2d
-=======
+
 A 2D Piecewise rigid displacement solver
 =======
 
