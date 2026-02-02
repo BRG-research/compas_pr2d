@@ -1,4 +1,5 @@
 # compas_pr2d
+<<<<<<< HEAD
 
 A 2D piecewise rigid displacement solver
 
@@ -26,3 +27,6 @@ please check out the online documentation here: [compas_pr2d docs](https://BRG-r
 ## Issue Tracker
 
 If you find a bug or if you have a problem with running the code, please file an issue on the [Issue Tracker](https://github.com/BRG-research/compas_pr2d/issues).
+=======
+A 2D Piecewise rigid displacement solver
+>>>>>>> 29b9ec7 (Initial commit)
