@@ -1,10 +1,17 @@
 # src/prd/model.py
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional, Sequence, List, Tuple, Any, Dict
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+
+import compas.geometry as cg
 import numpy as np
 import numpy.typing as npt
-import compas.geometry as cg
 
 
 @dataclass
@@ -62,12 +69,13 @@ class PR2DModel:
     # -------------------------
     # Step 1: geometry init
     # -------------------------
-    def from_mesh(self, mesh: cg.Mesh) -> "PRDModel":
+    def from_mesh(self, mesh: cg.Mesh) -> "PR2DModel":
         if mesh is None:
             raise ValueError("Input mesh is None.")
         self.mesh = mesh
 
-        from assembly.indexing import mesh_to_vertices_edges, common_edges
+        from compas_pr2d.assembly.indexing import common_edges
+        from compas_pr2d.assembly.indexing import mesh_to_vertices_edges
 
         self.n, self.e = mesh_to_vertices_edges(self.mesh)
 
@@ -80,17 +88,20 @@ class PR2DModel:
 
         return self
 
-    def from_polygons(self, polygons: List[cg.Polygon]) -> "PRDModel":
+    def from_polygons(self, polygons: List[cg.Polygon]) -> "PR2DModel":
         self.polygons = polygons
 
         # remap immediately (as you want)
-        from assembly.indexing import mesh_polygon, mesh_to_vertices_edges, common_edges
+        # from assembly.indexing import common_edges
+
+        from compas_pr2d.assembly.indexing import mesh_polygon
+        from compas_pr2d.assembly.indexing import mesh_to_vertices_edges
 
         self.mesh = mesh_polygon(self.polygons)
         self.n, self.e = mesh_to_vertices_edges(self.mesh)
 
         # contacts
-        self.contacts, self.boundaries = common_edges(self.mesh)
+        # self.contacts, self.boundaries = common_edges(self.mesh)
 
         # self.intfn = len(self.contacts) + len(self.boundaries)
 
@@ -100,7 +111,7 @@ class PR2DModel:
 
     def display_mesh(self, bindex=True, nindex=False) -> None:
         self._require_geom()  # Checks if geometry is initialized already
-        from viz.prd_view import show_mesh
+        from compas_pr2d.viz.prd_view import show_mesh
 
         show_mesh(self.mesh, bindex=bindex, nindex=nindex, n=self.n, e=self.e)
 
@@ -108,16 +119,14 @@ class PR2DModel:
         self,
         bindex=True,
     ) -> None:
-        from viz.prd_view import show_mesh_with_contact
+        from compas_pr2d.viz.prd_view import show_mesh_with_contact
 
         show_mesh_with_contact(self.mesh, bindex=bindex, n=self.n, e=self.all_contacts)
 
     # -------------------------
     # Step 2: connectivity + assembly
     # -------------------------
-    def set_boundary_edges(
-        self, boundary_edges: List[int] = None, display: bool = True
-    ) -> "PRDModel":
+    def set_boundary_edges(self, boundary_edges: List[int] = None, display: bool = True) -> "PR2DModel":
         self._require_geom()  # Checks if geometry is initialized already
         # assemble contacts + matrices now
         self.assigned_boundary_edges = boundary_edges
@@ -130,19 +139,15 @@ class PR2DModel:
         """Compute contacts + A-matrices and store them."""
 
         self._require_geom()
-        from assembly.indexing import common_edges
+        from compas_pr2d.assembly.indexing import common_edges
 
-        self.contacts, self.boundaries = common_edges(
-            self.mesh, self.assigned_boundary_edges
-        )
+        self.contacts, self.boundaries = common_edges(self.mesh, self.assigned_boundary_edges)
         self.intfn = len(self.contacts) + len(self.boundaries)
         self.all_contacts = self.contacts + self.boundaries
         # Matrix Assembly (A_ub, A_eq)
-        from assembly.matrices import (
-            assemble_A_ub,
-            assemble_A_eq,
-            assemble_boundary_elements,
-        )
+        from compas_pr2d.assembly.matrices import assemble_A_eq
+        from compas_pr2d.assembly.matrices import assemble_A_ub
+        from compas_pr2d.assembly.matrices import assemble_boundary_elements
 
         self.A_ub = assemble_A_ub(
             polygons=self.mesh,
@@ -178,16 +183,14 @@ class PR2DModel:
     # Step 3: BCs and loads
     # -------------------------
 
-    def set_force(
-        self, loads: Optional[Dict[int, Tuple[float, float, float]]] = None
-    ) -> "PRDModel":
+    def set_force(self, loads: Optional[Dict[int, Tuple[float, float, float]]] = None) -> "PR2DModel":
         self._require_geom()
         if loads is not None:
             self.loads = {int(k): tuple(map(float, v)) for k, v in loads.items()}
         # self._assemble_rhs()
         return self
 
-    def assign_bc(self, disp_data: Sequence[Sequence[float]]) -> "PRDModel":
+    def assign_bc(self, disp_data: Sequence[Sequence[float]]) -> "PR2DModel":
         self._require_geom()
         self._require_matrices()
         self.disp_data = disp_data
@@ -198,13 +201,11 @@ class PR2DModel:
         """Compute and store c, b_ub, b_eq."""
         self._require_geom()
         self._require_matrices()
-        assert (
-            self.polygons is not None
-            and self.A_ub is not None
-            and self.A_eq is not None
-        )
+        assert self.polygons is not None and self.A_ub is not None and self.A_eq is not None
 
-        from assembly.rhs import build_force_vector, build_rhs_vectors, set_sw_force
+        from compas_pr2d.assembly.rhs import build_force_vector
+        from compas_pr2d.assembly.rhs import build_rhs_vectors
+        from compas_pr2d.assembly.rhs import set_sw_force
 
         # self.c = build_force_vector(m=m, gravity=self.gravity, user_loads=self.loads)
 
@@ -231,7 +232,7 @@ class PR2DModel:
         if self.c is None or self.b_ub is None or self.b_eq is None:
             self._assemble_rhs()
 
-        from solver.cvxpy_backend import solve_cvxpy
+        from compas_pr2d.solver.cvxpy_backend import solve_cvxpy
 
         self.results = solve_cvxpy(
             A_ub=self.A_ub,
@@ -250,7 +251,7 @@ class PR2DModel:
         self._require_geom()
         if self.results is None:
             raise ValueError("No results. Call solve() first.")
-        from viz.prd_result_viewer import show_results
+        from compas_pr2d.viz.prd_result_viewer import show_results
 
         show_results(self.mesh, self.results)
 

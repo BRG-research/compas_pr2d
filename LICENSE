@@ -1,10 +1,10 @@
 MIT License
 
 <<<<<<< HEAD
-Baraa El Moussa
-=======
 Copyright (c) 2026 BRG-research
->>>>>>> 29b9ec7 (Initial commit)
+=======
+Baraa El Moussa
+>>>>>>> 8f06b73 (Piecewise rigid displacement implementation integrated with compas mesh for 2D simple problems)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

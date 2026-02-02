@@ -1,7 +1,7 @@
 import cvxpy as cp
 from dataclasses import dataclass
 import numpy as np
-from problem.helpers import print_matrix
+from compas_pr2d.problem.helpers import print_matrix
 
 
 @dataclass
@@ -11,9 +11,7 @@ class Results:
     objective: float
 
 
-def solve_cvxpy(
-    *, A_ub, b_ub, A_eq, b_eq, c, solver=cp.MOSEK, verbose=False
-) -> Results:
+def solve_cvxpy(*, A_ub, b_ub, A_eq, b_eq, c, solver=cp.MOSEK, verbose=False) -> Results:
     nvar = A_ub.shape[1]
     U = cp.Variable(nvar)
 
