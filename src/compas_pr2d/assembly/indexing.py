@@ -3,16 +3,14 @@ import compas.geometry as cg
 from compas.datastructures import Mesh
 
 
-def mesh_polygon(polygons: List[cg.Polygon]):
+def mesh_polygon(polygons: List[Mesh]):
     """
     converts the list of compas polygons to a compas mesh
     :polygons: List[cg.Polygon] -- list of compas polygons
     :return: Mesh -- compas mesh
     """
-
-    polygons_vertices = [
-        [[p[0], p[1], p[2]] for p in poly.to_points()] for poly in polygons
-    ]
+    print(f"Polygon points are: {polygons[0].face_points(0)}")
+    polygons_vertices = [[[p[0], p[1], p[2]] for p in poly.face_points(0)] for poly in polygons]
     # Instead of polygons.to_vertices_and_faces(), get only vertices
 
     meshed = Mesh.from_polygons(polygons_vertices)
@@ -89,10 +87,7 @@ def find_boundary_edges(mesh: Mesh, k):
     for edge in E:
         if mesh.is_edge_on_boundary(edge):
             for p in edge:
-                if (
-                    len(mesh.vertex_faces(edge[0])) == 1
-                    and len(mesh.vertex_faces(edge[1])) == 1
-                ):
+                if len(mesh.vertex_faces(edge[0])) == 1 and len(mesh.vertex_faces(edge[1])) == 1:
                     face = mesh.vertex_faces(edge[1])[0]
                     boundary_edges.append((face, k, edge))
                     k += 1
