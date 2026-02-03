@@ -9,7 +9,7 @@ A 2D piecewise rigid displacement - optimization based solver for simple 2D geom
 
 
 > [!WARNING]
-> This package is still underdevelopment, and may contain bugs for some specific typologies.
+> This package is still under development, and may contain bugs for some specific typologies.
 
 ## Installation
 
