@@ -9,7 +9,7 @@ def mesh_polygon(polygons: List[Mesh]):
     :polygons: List[cg.Polygon] -- list of compas polygons
     :return: Mesh -- compas mesh
     """
-    print(f"Polygon points are: {polygons[0].face_points(0)}")
+    # print(f"Polygon points are: {polygons[0].face_points(0)}")
     polygons_vertices = [[[p[0], p[1], p[2]] for p in poly.face_points(0)] for poly in polygons]
     # Instead of polygons.to_vertices_and_faces(), get only vertices
 

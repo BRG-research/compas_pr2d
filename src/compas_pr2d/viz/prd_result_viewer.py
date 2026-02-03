@@ -39,12 +39,13 @@ def show_results(polygons, results, scale=1.0):
 def deform_polygon_linear(poly, Ux, Uz, th, face_index):
     c = poly.face_centroid(face_index)
     cx, cz = c[0], c[2]
-
+    U_nodes = []
     new_pts = []
     for p in poly.face_vertices(face_index):  #
         x, z = poly.vertex[p]["x"], poly.vertex[p]["z"]
         x_new = x + Ux - th * (z - cz)
         z_new = z + Uz + th * (x - cx)
         new_pts.append(cg.Point(x_new, 0.0, z_new))
+        U_nodes.append((x_new - x, z_new - z))
 
     return cg.Polygon(new_pts)

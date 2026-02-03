@@ -235,17 +235,20 @@ class PR2DModel:
         from compas_pr2d.solver.cvxpy_backend import solve_cvxpy
 
         self.results = solve_cvxpy(
+            self.mesh,
             A_ub=self.A_ub,
             b_ub=self.b_ub,
             A_eq=self.A_eq,
             b_eq=self.b_eq,
             c=self.c,
         )
+
         if self.results.status == "unbounded":
             raise ValueError("The problem is unbounded.")
         if self.results.status != "optimal":
             raise ValueError("The solver didn't find an optimal solution.")
-        return self.results
+
+        return None
 
     def display_results(self) -> None:
         self._require_geom()
