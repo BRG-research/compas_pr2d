@@ -29,4 +29,4 @@ print("Assigning BCs to RHS vectors...")
 model.assign_bc(disp_data)
 # print("Solving the system...")
 model.solve()
-# model.display_results()  # postprocesses and displays results
+model.display_results()  # postprocesses and displays results

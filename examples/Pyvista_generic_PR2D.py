@@ -6,8 +6,14 @@
 import numpy as np
 import pyvista as pv
 from compas.datastructures import Mesh
+from pyvista.plotting.opts import ElementType
+from pyvista.trame.ui import plotter_ui
+from trame.app import get_server
+from trame.ui.vuetify3 import SinglePageLayout
 
-from compas_pr2d import arch, lintles, wall
+from compas_pr2d import arch
+from compas_pr2d import lintles
+from compas_pr2d import wall
 from compas_pr2d.prd import PR2DModel
 
 height = 4
@@ -21,7 +27,7 @@ arch_geometry = arch.construct_arch(height, span, n, thickness)
 # arch_geometry = wall.construct_wall(length=5, height=4, nl=5, nh=4)
 
 model.from_polygons(arch_geometry)
-# model.display_mesh(bindex=True, nindex=True)
+model.display_mesh(bindex=False, nindex=False)
 model.set_boundary_edges(display=False)
 disp_data = [
     [10, 0.0, -0.2],
@@ -29,6 +35,7 @@ disp_data = [
 # model.set_force()  # for now no loads, just self-weight which is default in the model (i will add as gravity to all blocks for now only)
 model.assign_bc(disp_data)
 model.solve()
+model.display_results()
 # -------------------------------------------------------------------------
 
 
@@ -79,9 +86,10 @@ def assign_scalar(mesh, scalar, name):
 
 def mesh_2d_to_pyvista(mesh: Mesh) -> pv.UnstructuredGrid:
     """Convert a Compas Mesh to a PyVista UnstructuredGrid."""
+    k = list(mesh.vertex_gkey())
     nodes = np.zeros((mesh.number_of_vertices(), 3), dtype=float)
-    for i in range(mesh.number_of_vertices()):
-        p = mesh.vertex[i]
+    for i, key in enumerate(k):
+        p = mesh.vertex[key]
         nodes[i] = (p["x"], p["y"], p["z"])
 
     faces = []
@@ -94,6 +102,16 @@ def mesh_2d_to_pyvista(mesh: Mesh) -> pv.UnstructuredGrid:
     return pv.UnstructuredGrid(connectivity, np.full(mesh.number_of_faces(), pv.CellType.POLYGON), nodes)
 
 
+# def callback(mesh):
+#     g = mesh.picked_mesh
+#     print(f"Picked Mesh: {g}")
+#     if g is None:
+#         return
+#     pid = g.find_closest_point(plt.picked_point)
+#     u = float(g.point_data["Displacement"][pid])
+#     print("pid =", pid, "U =", u)
+
+
 def mesh_pr2d_to_pyvista(mesh: list[Mesh], scalar) -> pv.UnstructuredGrid:
     """Convert a Compas Mesh to a PyVista UnstructuredGrid."""
     plt = pv.Plotter()
@@ -101,20 +119,44 @@ def mesh_pr2d_to_pyvista(mesh: list[Mesh], scalar) -> pv.UnstructuredGrid:
     for i in range(n):
         face = mesh[i]
         temp = mesh_2d_to_pyvista(face)
-        plt.add_mesh(temp, scalars=scalar[i], show_edges=True, cmap="jet", opacity=1.0)
-    plt.show_grid()
-    # plt.add_mesh_slice_spline(temp, n_handles=2)
-    plt.enable_surface_point_picking()
-    plt.show()
-    return None
+        assign_scalar(temp, scalar[i], "Displacement")
+        plt.add_mesh(temp, show_edges=True, cmap="jet", opacity=1.0)
+    plt.enable_element_picking(show_message=True, left_clicking=True)
+    # J = plt.enable_element_picking(mode="edge")
+    # print("Selected element edge is :", J)
+    return plt
 
+
+# -------------------------------------------------------------------------
+
+# Process results to get displacement magnitudes
 
 U_n = Results.U_n
 U_n = np.reshape(U_n, (len(A), 4, 3))
 Ux, Uy = U_n[:, :, 0], U_n[:, :, 1]
 U_mag = np.sqrt(Ux**2 + Uy**2)
-mesh_pr2d_to_pyvista(A, U_mag)
 
+# -------------------------------------------------------------------------
+
+# Trame server setup and plotting
+
+# pv.OFF_SCREEN = True
+
+# server = get_server()
+# state, ctrl = server.state, server.controller
+
+# plt = mesh_pr2d_to_pyvista(A, U_mag)  # Instantiate the plotter.
+# # Adds the Mesh and scalar data to the plotter.
+
+
+# with SinglePageLayout(server) as layout:
+#     with layout.content:
+#         view = plotter_ui(plt)
+
+# server.start()
+# -------------------------------------------------------------------------
+
+# Alternative Pyvista visualization (without trame) ----------------------
 
 # grid = mesh_2d_to_pyvista(A)
 # # grid = pv.UnstructuredGrid(connectivity, np.full(A.number_of_faces(), pv.CellType.POLYGON), nodes)
@@ -125,6 +167,7 @@ mesh_pr2d_to_pyvista(A, U_mag)
 # U_mag = np.sqrt(Ux**2 + Uy**2)
 # Uy_np = np.asarray(Uy, dtype=float)
 
+plt = mesh_pr2d_to_pyvista(A, U_mag)  # Instantiate the plotter.
 
 # assign_scalar(grid, U_mag, "U_mag")
 # plt.add_mesh(grid, show_edges=True, cmap="jet", opacity=1.0, show_scalar_bar=False)
@@ -134,4 +177,5 @@ mesh_pr2d_to_pyvista(A, U_mag)
 # # plt.add_mesh_clip_plane(grid)
 # # plt.add_mesh_slice_spline(grid, n_handles=2)
 
-# plt.show()
+
+plt.show()

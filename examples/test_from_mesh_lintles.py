@@ -14,7 +14,7 @@ lintles_geometry = lintles.construct_lintles(height, span, n)
 print("Feeding the geometry to the model ...")
 
 model.from_polygons(lintles_geometry)
-# model.display_mesh(bindex=True, nindex=True) # Keep only for debugging
+# model.display_mesh(bindex=True, nindex=True)  # Keep only for debugging
 
 # boundary_edges = [0,10] # Optional list of boundary edge IDs.
 # Otherwise, boundary edges will be automatically detected.
