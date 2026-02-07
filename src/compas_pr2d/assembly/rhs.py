@@ -20,6 +20,7 @@ def build_rhs_vectors(b_ub, b_eq, disp_data, nodes, edge):
         else:
             fy = np.array([fy_, fy_])
 
+        # Converting to XY components can cause contradictions in the BC for now, unless i resolve another way
         # vx = nodes[A][0] - nodes[B][0]  # A_x - B_x
         # vz = nodes[A][1] - nodes[B][1]  # A_z - B_z
         # edge = cg.Vector(vx, 0, vz)

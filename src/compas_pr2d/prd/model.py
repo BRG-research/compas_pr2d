@@ -224,7 +224,7 @@ class PR2DModel:
     # -------------------------
     # Step 4: solve + display
     # -------------------------
-    def solve(self, *, solver_opts: Optional[dict] = None) -> Results:
+    def solve(self, dual: bool = False, mu: float = 0.2) -> Results:
         self._require_geom()
         self._require_matrices()
 
@@ -233,15 +233,39 @@ class PR2DModel:
             self._assemble_rhs()
 
         from compas_pr2d.solver.cvxpy_backend import solve_cvxpy
+        from compas_pr2d.solver.cvxpy_backend import solve_cvxpy_dual
 
-        self.results = solve_cvxpy(
-            self.mesh,
-            A_ub=self.A_ub,
-            b_ub=self.b_ub,
-            A_eq=self.A_eq,
-            b_eq=self.b_eq,
-            c=self.c,
-        )
+        if dual:
+            self.results = solve_cvxpy(
+                self.mesh,
+                A_ub=self.A_ub,
+                b_ub=self.b_ub,
+                A_eq=self.A_eq,
+                b_eq=self.b_eq,
+                c=self.c,
+            )
+
+            self.results = solve_cvxpy_dual(
+                self.mesh,
+                A_ub=self.A_ub,
+                b_ub=self.b_ub,
+                A_eq=self.A_eq,
+                b_eq=self.b_eq,
+                c=self.c,
+                mu=mu,
+                results=self.results,
+                verbose=False,
+            )
+
+        else:
+            self.results = solve_cvxpy(
+                self.mesh,
+                A_ub=self.A_ub,
+                b_ub=self.b_ub,
+                A_eq=self.A_eq,
+                b_eq=self.b_eq,
+                c=self.c,
+            )
 
         if self.results.status == "unbounded":
             raise ValueError("The problem is unbounded.")
@@ -250,13 +274,19 @@ class PR2DModel:
 
         return None
 
-    def display_results(self) -> None:
+    def display_results(self, dual=False) -> None:
         self._require_geom()
         if self.results is None:
             raise ValueError("No results. Call solve() first.")
         from compas_pr2d.viz.prd_result_viewer import show_results
+        from compas_pr2d.viz.prd_view_dual import show_dual_results
 
-        show_results(self.mesh, self.results)
+        if dual:
+            print("Showing results for dual problem")
+            show_dual_results(self, fn_opt=self.results.fn, ft_opt=self.results.ft, scale=0.01)
+        else:
+            print("Showing results for primal problem")
+            show_results(self.mesh, self.results)
 
     # -------------------------
     # guards

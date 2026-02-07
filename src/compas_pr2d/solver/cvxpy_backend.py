@@ -66,24 +66,32 @@ def deform_polygon_linear(poly: Mesh, U_solution, scale):
     return deformed, U_nodes, n_total
 
 
-def solve_cvxpy_dual(mesh: Mesh, A_ub, A_eq, c, results, solver=cp.MOSEK, verbose=False) -> Results:
-
-    U = np.asarray(results.U)
+def solve_cvxpy_dual(mesh: Mesh, A_ub, A_eq, c, b_ub, b_eq, mu, results, solver=cp.MOSEK, verbose=False) -> Results:
 
     m_ub, _ = A_ub.shape
     m_eq, _ = A_eq.shape
-
+    mu = mu
     # Stacking the dual problem data as in the antonino's paper
     # As the CVXPY solver expects the objective function to be a single vector
     # not a decoupled fn and ft.
 
     # So all the data will be horitzontally stacked as follows:
-    delta = np.hstack([A_ub @ U, A_eq @ U])  # (m_ub + m_eq,)
-    A_T = np.hstack([A_ub.T, A_eq.T])  # (n, m_ub + m_eq)
+    delta_n = -b_ub
+    delta_t = -b_eq
 
+    delta = np.hstack([delta_n, delta_t])  # (m_ub + m_eq,)
+    A_T = np.hstack([A_ub.T, A_eq.T])  # (n, m_ub + m_eq)
     f = cp.Variable(m_ub + m_eq)
 
-    constraints = [A_T @ f == c, f[:m_ub] <= 0]
+    fn = f[:m_ub]
+    ft = f[m_ub:]
+
+    constraints = [A_T @ f == c, fn <= 0]
+
+    constraints += [
+        ft <= -mu * (fn),
+        ft >= mu * (fn),
+    ]
 
     objective = cp.Minimize(-(delta @ f))
 
@@ -99,9 +107,10 @@ def solve_cvxpy_dual(mesh: Mesh, A_ub, A_eq, c, results, solver=cp.MOSEK, verbos
     fn_opt = f_opt[:m_ub]  # normal component
     ft_opt = f_opt[m_ub:]  # tangential component
 
-    # Verify the optimality condition after decomposing the force vector.
-    res = A_ub.T @ fn_opt + A_eq.T @ ft_opt - c
-    print("||res||2 =", np.linalg.norm(res))
+    if verbose:
+        # Verify the optimality condition after decomposing the force vector.
+        res = A_ub.T @ fn_opt + A_eq.T @ ft_opt - c
+        print("||res||2 =", np.linalg.norm(res))
 
     return Results(
         U=results.U,
